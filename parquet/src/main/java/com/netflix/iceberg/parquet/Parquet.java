@@ -51,14 +51,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
-import static com.netflix.iceberg.TableProperties.PARQUET_COMPRESSION;
-import static com.netflix.iceberg.TableProperties.PARQUET_COMPRESSION_DEFAULT;
-import static com.netflix.iceberg.TableProperties.PARQUET_DICT_SIZE_BYTES;
-import static com.netflix.iceberg.TableProperties.PARQUET_DICT_SIZE_BYTES_DEFAULT;
-import static com.netflix.iceberg.TableProperties.PARQUET_PAGE_SIZE_BYTES;
-import static com.netflix.iceberg.TableProperties.PARQUET_PAGE_SIZE_BYTES_DEFAULT;
-import static com.netflix.iceberg.TableProperties.PARQUET_ROW_GROUP_SIZE_BYTES;
-import static com.netflix.iceberg.TableProperties.PARQUET_ROW_GROUP_SIZE_BYTES_DEFAULT;
+import static com.netflix.iceberg.TableProperties.*;
 
 public class Parquet {
   private Parquet() {
@@ -185,8 +178,11 @@ public class Parquet {
 
         long rowGroupSize = Long.parseLong(config.getOrDefault(
             PARQUET_ROW_GROUP_SIZE_BYTES, PARQUET_ROW_GROUP_SIZE_BYTES_DEFAULT));
+        long statUpperLength = Long.parseLong(config.getOrDefault(
+            PARQUET_STAT_UPPER_BOUND_LENGTH, PARQUET_STAT_UPPER_BOUND_LENGTH_DEFAULT));
+
         return new com.netflix.iceberg.parquet.ParquetWriter<>(
-            conf, file, schema, rowGroupSize, metadata, createWriterFunc, codec());
+            conf, file, schema, rowGroupSize, metadata, createWriterFunc, codec(), statUpperLength);
       } else {
         return new ParquetWriteAdapter<>(new ParquetWriteBuilder<D>(ParquetIO.file(file))
             .setType(type)
