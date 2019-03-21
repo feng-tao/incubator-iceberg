@@ -28,6 +28,7 @@ import com.netflix.iceberg.avro.AvroSchemaUtil;
 import com.netflix.iceberg.exceptions.RuntimeIOException;
 import com.netflix.iceberg.expressions.Expression;
 import com.netflix.iceberg.hadoop.HadoopInputFile;
+import com.netflix.iceberg.hadoop.HadoopOutputFile;
 import com.netflix.iceberg.io.CloseableIterable;
 import com.netflix.iceberg.io.FileAppender;
 import com.netflix.iceberg.io.InputFile;
@@ -50,14 +51,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
-import static com.netflix.iceberg.TableProperties.PARQUET_COMPRESSION;
-import static com.netflix.iceberg.TableProperties.PARQUET_COMPRESSION_DEFAULT;
-import static com.netflix.iceberg.TableProperties.PARQUET_DICT_SIZE_BYTES;
-import static com.netflix.iceberg.TableProperties.PARQUET_DICT_SIZE_BYTES_DEFAULT;
-import static com.netflix.iceberg.TableProperties.PARQUET_PAGE_SIZE_BYTES;
-import static com.netflix.iceberg.TableProperties.PARQUET_PAGE_SIZE_BYTES_DEFAULT;
-import static com.netflix.iceberg.TableProperties.PARQUET_ROW_GROUP_SIZE_BYTES;
-import static com.netflix.iceberg.TableProperties.PARQUET_ROW_GROUP_SIZE_BYTES_DEFAULT;
+import static com.netflix.iceberg.TableProperties.*;
 
 public class Parquet {
   private Parquet() {
@@ -172,8 +166,8 @@ public class Parquet {
         Preconditions.checkArgument(writeSupport == null,
             "Cannot write with both write support and Parquet value writer");
         Configuration conf;
-        if (file instanceof HadoopInputFile) {
-          conf = ((HadoopInputFile) file).getConf();
+        if (file instanceof HadoopOutputFile) {
+          conf = ((HadoopOutputFile) file).getConf();
         } else {
           conf = new Configuration();
         }
@@ -184,8 +178,11 @@ public class Parquet {
 
         long rowGroupSize = Long.parseLong(config.getOrDefault(
             PARQUET_ROW_GROUP_SIZE_BYTES, PARQUET_ROW_GROUP_SIZE_BYTES_DEFAULT));
+        long statUpperLength = Long.parseLong(config.getOrDefault(
+            PARQUET_STAT_UPPER_BOUND_LENGTH, PARQUET_STAT_UPPER_BOUND_LENGTH_DEFAULT));
+
         return new com.netflix.iceberg.parquet.ParquetWriter<>(
-            conf, file, schema, rowGroupSize, metadata, createWriterFunc, codec());
+            conf, file, schema, rowGroupSize, metadata, createWriterFunc, codec(), statUpperLength);
       } else {
         return new ParquetWriteAdapter<>(new ParquetWriteBuilder<D>(ParquetIO.file(file))
             .setType(type)
